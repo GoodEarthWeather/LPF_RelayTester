@@ -45,23 +45,6 @@ void initGPIO(void)
    );
 
 
-// set GPIO outputs
-    GPIO_setAsOutputPin(KEYOUT);
-    GPIO_setAsOutputPin(RF_CONTROL);
-    GPIO_setAsOutputPin(SW_CONTROL);
-    GPIO_setAsOutputPin(TRIGGER);
-    GPIO_setAsOutputPin(SW5_CONTROL);
-    GPIO_setAsOutputPin(SWR_RESET);
-
-
-   // set all controls to disable everything
-   GPIO_setOutputLowOnPin(KEYOUT);  // keyer out low
-   GPIO_setOutputLowOnPin(TRIGGER);  // trigger out low
-   GPIO_setOutputLowOnPin(RF_CONTROL);  // disable rf
-   GPIO_setOutputLowOnPin(SW_CONTROL);  // disable switching regulator
-   GPIO_setOutputLowOnPin(SW5_CONTROL);  // disable switching regulator
-   GPIO_setOutputHighOnPin(SWR_RESET);  // enable swr latch
-
    /*
     * Disable the GPIO power-on default high-impedance mode to activate
     * previously configured port settings

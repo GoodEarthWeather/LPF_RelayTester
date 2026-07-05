@@ -9,6 +9,8 @@
 #define LATCH_PORT   GPIO_PORT_P1
 #define LATCH_PIN    GPIO_PIN7
 
+// Track valid button press states globally
+volatile uint8_t button_pressed_flag = 0;
 
 #define delay_ms(x)     __delay_cycles((long) x* 1000 * 8)
 #define delay_us(x)     __delay_cycles((long) x * 8)
@@ -16,6 +18,14 @@
 void initClocks(void);
 void init_spi_shift_register(void);
 void initGPIO(void);
+void send_byte_to_shift_register(uint8_t);
+void init_switch_s1(void);
+
+// Define the GPIO Pin used for the 74HCT595 Latch Signal (RCLK)
+#define LATCH_PORT   GPIO_PORT_P1
+#define LATCH_PIN    GPIO_PIN7
+
+
 
 int main(void) {
 
@@ -27,7 +37,7 @@ int main(void) {
     init_spi_shift_register(); // Hardware setup from the previous step
     init_switch_s1();          // S1 and Timer_A3 debounce setup
 
-    uint8_t data_to_send = 0x01;
+    uint8_t data_to_send = SELECT_40M;
 
     while (1)
     {
@@ -39,9 +49,12 @@ int main(void) {
             send_byte_to_shift_register(data_to_send);
 
             // Increment or modify the test byte
-            data_to_send <<= 1;
-            if (data_to_send == 0x00) {
-                data_to_send = 0x01;
+            if ( data_to_send == SELECT_40M) {
+                data_to_send = SELECT_2030M;
+            } else if (data_to_send == SELECT_2030M) {
+                data_to_send = SELECT_1517M;
+            } else {
+                data_to_send = SELECT_40M;
             }
         }
     }
@@ -52,9 +65,6 @@ int main(void) {
 // Routine from Gemini to shift data to the 595
 //#include "driverlib.h"
 
-// Define the GPIO Pin used for the 74HCT595 Latch Signal (RCLK)
-#define LATCH_PORT   GPIO_PORT_P1
-#define LATCH_PIN    GPIO_PIN7
 
 void init_spi_shift_register(void)
 {
@@ -79,7 +89,7 @@ void init_spi_shift_register(void)
     param.desiredSpiClock = 1000000;                                     // Drive transmission at 1 MHz
     param.msbFirst = EUSCI_B_SPI_MSB_FIRST;                              // 74HCT595 shifts in MSB first
     param.clockPolarity = EUSCI_B_SPI_CLOCKPOLARITY_INACTIVITY_LOW;      // CPOL = 0 (Clock low when idle)
-    param.clockPhase = EUSCI_B_SPI_PHASE_DATA_CHANGED_ONFIRST_CAPTURED_ON_NEXT; // CPHA = 0 (Data changes on falling, latched on rising edge)
+    param.clockPhase = EUSCI_B_SPI_PHASE_DATA_CAPTURED_ONFIRST_CHANGED_ON_NEXT; // CPHA = 0 (Data changes on falling, latched on rising edge)
     param.spiMode = EUSCI_B_SPI_3PIN;                                    // 3-Wire Mode (Clock, SIMO, ignoring SOMI line)
 
     // 4. Initialize and Enable the eUSCI_B0 Peripheral Module
@@ -113,8 +123,6 @@ void send_byte_to_shift_register(uint8_t data)
 
 //#include "driverlib.h"
 
-// Track valid button press states globally
-volatile uint8_t button_pressed_flag = 0;
 
 void init_switch_s1(void)
 {
@@ -132,8 +140,8 @@ void init_switch_s1(void)
     timerParam.clockSource = TIMER_A_CLOCKSOURCE_SMCLK;
     timerParam.clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_1;
     timerParam.timerPeriod = 15000;
-    timerParam.timerInterruptEnable_TAIE = TIMER_A_TAIE_DISABLE;
-    timerParam.captureCompareInterruptEnable_CCR0_CCIE = TIMER_A_CCIE_ENABLE; // Enable CCR0 Interrupt
+    timerParam.timerInterruptEnable_TAIE = TIMER_A_TAIE_INTERRUPT_DISABLE;
+    timerParam.captureCompareInterruptEnable_CCR0_CCIE = TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE; // Enable CCR0 Interrupt
     timerParam.timerClear = TIMER_A_DO_CLEAR;
     timerParam.startTimer = false; // Do not start running yet
 
