@@ -47,6 +47,8 @@ int main(void) {
 
             // Execute task: Send shifted data byte over eUSCI_B0
             send_byte_to_shift_register(data_to_send);
+            delay_ms(12);
+            send_byte_to_shift_register(0);
 
             // Increment or modify the test byte
             if ( data_to_send == SELECT_40M) {
